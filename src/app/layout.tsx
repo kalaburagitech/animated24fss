@@ -5,6 +5,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { StickyCta } from "@/components/StickyCta";
+import { SmoothScrollProvider } from "@/components/providers/SmoothScrollProvider";
 
 const display = Syne({
   subsets: ["latin"],
@@ -32,11 +33,13 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${display.variable} ${sans.variable}`}>
       <body className="min-h-screen font-sans">
-        <LoadingScreen />
-        <Navbar />
-        <main className="pt-[72px]">{children}</main>
-        <Footer />
-        <StickyCta />
+        <SmoothScrollProvider>
+          <LoadingScreen />
+          <Navbar />
+          <main className="pt-[72px]">{children}</main>
+          <Footer />
+          <StickyCta />
+        </SmoothScrollProvider>
       </body>
     </html>
   );
