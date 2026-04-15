@@ -1,0 +1,104 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+
+  --color-fss-black: #050505;
+  --color-fss-void: #0a0a0a;
+  --color-fss-red: #7f1d1d;
+  --color-fss-crimson: #dc2626;
+  --color-fss-orange: #ea580c;
+  --color-fss-amber: #f97316;
+  --color-fss-glow: rgba(249, 115, 22, 0.45);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+body {
+  @apply bg-fss-black text-zinc-100 antialiased;
+  background-image: radial-gradient(
+      ellipse 120% 80% at 50% -20%,
+      rgba(127, 29, 29, 0.35),
+      transparent 55%
+    ),
+    linear-gradient(180deg, #050505 0%, #0a0a0a 100%);
+  min-height: 100vh;
+}
+
+::selection {
+  background: rgba(234, 88, 12, 0.35);
+  color: #fff;
+}
+
+.glass-panel {
+  @apply rounded-2xl border border-white/10 bg-white/[0.06] backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.45)];
+}
+
+.glow-orange {
+  box-shadow: 0 0 40px rgba(249, 115, 22, 0.35), 0 0 80px rgba(220, 38, 38, 0.2);
+}
+
+.text-glow {
+  text-shadow: 0 0 40px rgba(249, 115, 22, 0.5), 0 0 80px rgba(220, 38, 38, 0.25);
+}
+
+.perspective-scene {
+  perspective: 1000px;
+  transform-style: preserve-3d;
+}
+
+.will-change-transform {
+  will-change: transform;
+}
+
+@keyframes fss-spark-rise {
+  0% {
+    transform: translate3d(0, 0, 0) scale(0.55);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.88;
+  }
+  100% {
+    transform: translate3d(6px, -130%, 0) scale(1.05);
+    opacity: 0;
+  }
+}
+
+@keyframes fss-smoke-drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1.02);
+    opacity: 0.32;
+  }
+  50% {
+    transform: translate3d(2%, -3%, 0) scale(1.07);
+    opacity: 0.48;
+  }
+}
+
+.fss-spark-bit {
+  animation-name: fss-spark-rise;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+.fss-smoke-drift {
+  animation: fss-smoke-drift 22s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fss-spark-bit,
+  .fss-smoke-drift {
+    animation: none !important;
+  }
+}
