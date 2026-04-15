@@ -9,7 +9,12 @@ const items = [
   { src: ASSETS.fireHero, alt: "Fire safety training environment", tall: true },
   { src: ASSETS.training1, alt: "Hands-on training", tall: false },
   { src: ASSETS.training2, alt: "ERT simulation", tall: false },
-  { src: ASSETS.extinguisherFire, alt: "Extinguisher focus", tall: true },
+  { src: ASSETS.extinguisher, alt: "Dry chemical extinguisher reference", tall: true },
+  {
+    src: ASSETS.extinguisherFire,
+    alt: "Extinguisher under fire training conditions",
+    tall: false,
+  },
   { src: ASSETS.smoke, alt: "Smoke safety layer", tall: false },
   { src: ASSETS.sparks, alt: "Sparks", tall: false },
 ];

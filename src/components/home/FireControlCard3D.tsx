@@ -17,6 +17,8 @@ import { useReducedMotion } from "@/lib/useReducedMotion";
 
 type FireControlCard3DProps = {
   sectionRef: React.RefObject<HTMLElement | null>;
+  /** When true, strips duplicate HUD chrome so the card nests inside a merged Fire Control panel. */
+  merged?: boolean;
 };
 
 function useTouchOnly(): boolean {
@@ -77,7 +79,10 @@ function CardSparkLayer({ reduced }: { reduced: boolean }) {
   );
 }
 
-export function FireControlCard3D({ sectionRef }: FireControlCard3DProps) {
+export function FireControlCard3D({
+  sectionRef,
+  merged = false,
+}: FireControlCard3DProps) {
   const mobile = useIsMobile();
   const touchOnly = useTouchOnly();
   const reducedMotion = useReducedMotion();
@@ -119,6 +124,37 @@ export function FireControlCard3D({ sectionRef }: FireControlCard3DProps) {
     if (!section) return;
 
     scrollRef.current = { rx: 0, ry: 0, s: 1, ty: 0 };
+
+    /** Mobile: no scroll-scrubbed 3D (avoids “zoom / side zoom” with Lenis + pin). */
+    if (mobile) {
+      const tick = () => {
+        const card = cardRef.current;
+        const glow = glowRef.current;
+        const rim = rimRef.current;
+        if (!card || !glow || !rim) return;
+
+        const t = gsap.ticker.time;
+        const floatY = Math.sin(t * 0.75) * 3;
+
+        gsap.set(card, {
+          force3D: true,
+          transformPerspective: 0,
+          rotationX: 0,
+          rotationY: 0,
+          scale: 1,
+          x: 0,
+          y: floatY,
+        });
+
+        gsap.set(glow, { opacity: 0.52, scale: 1 });
+        gsap.set(rim, { opacity: 0.34 });
+      };
+
+      gsap.ticker.add(tick);
+      return () => {
+        gsap.ticker.remove(tick);
+      };
+    }
 
     const ctx = gsap.context(() => {
       ScrollTrigger.create({
@@ -186,7 +222,7 @@ export function FireControlCard3D({ sectionRef }: FireControlCard3DProps) {
       gsap.ticker.remove(tick);
       ctx.revert();
     };
-  }, [sectionRef, rotMul, mouseMul, floatAmp, touchOnly, reducedMotion]);
+  }, [sectionRef, rotMul, mouseMul, floatAmp, touchOnly, reducedMotion, mobile]);
 
   useLayoutEffect(() => {
     if (!reducedMotion) return;
@@ -196,17 +232,28 @@ export function FireControlCard3D({ sectionRef }: FireControlCard3DProps) {
     const rim = rimRef.current;
     if (!card || !glow || !rim) return;
 
-    gsap.set(card, {
-      force3D: true,
-      transformPerspective: 1400,
-      rotationX: 4 * rotMul,
-      rotationY: 12 * rotMul,
-      scale: 1.08,
-      y: 0,
-    });
+    if (mobile) {
+      gsap.set(card, {
+        force3D: true,
+        transformPerspective: 0,
+        rotationX: 0,
+        rotationY: 0,
+        scale: 1,
+        y: 0,
+      });
+    } else {
+      gsap.set(card, {
+        force3D: true,
+        transformPerspective: 1400,
+        rotationX: 4 * rotMul,
+        rotationY: 12 * rotMul,
+        scale: 1.08,
+        y: 0,
+      });
+    }
     gsap.set(glow, { opacity: 0.65, scale: 1 });
     gsap.set(rim, { opacity: 0.45 });
-  }, [reducedMotion, rotMul]);
+  }, [reducedMotion, rotMul, mobile]);
 
   useEffect(() => {
     const wrap = wrapRef.current;
@@ -231,14 +278,19 @@ export function FireControlCard3D({ sectionRef }: FireControlCard3DProps) {
     };
   }, [setPointerFromEvent, touchOnly, reducedMotion]);
 
+  const shellCls = merged
+    ? "mx-auto mt-0 flex w-full max-w-none touch-pan-y justify-center px-0 sm:px-0"
+    : "mx-auto mt-6 flex w-full max-w-lg touch-pan-y justify-center px-2 sm:mt-8";
+
   return (
-    <div
-      className="mx-auto mt-6 flex w-full max-w-lg justify-center px-2 sm:mt-8"
-      style={{ perspective: "1400px" }}
-    >
+    <div className={shellCls} style={{ perspective: mobile ? "none" : "1400px" }}>
       <div
         ref={wrapRef}
-        className="relative w-full max-w-[420px] pb-10 pt-4"
+        className={
+          merged
+            ? "relative w-full max-w-none pb-6 pt-0 lg:pb-8"
+            : "relative w-full max-w-[420px] pb-10 pt-4"
+        }
         onPointerEnter={() => {
           hoverRef.current = true;
         }}
@@ -248,54 +300,132 @@ export function FireControlCard3D({ sectionRef }: FireControlCard3DProps) {
       >
         <div
           ref={glowRef}
-          className="pointer-events-none absolute left-1/2 top-1/2 h-[135%] w-[135%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-br from-orange-500/50 via-red-600/40 to-transparent blur-[96px] will-change-[opacity,transform]"
+          className="pointer-events-none absolute left-1/2 top-1/2 h-[140%] w-[140%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[conic-gradient(at_50%_50%,rgba(34,211,238,0.22),rgba(249,115,22,0.48),rgba(220,38,38,0.38),rgba(6,182,212,0.18),transparent_58%)] blur-[88px] will-change-[opacity,transform]"
+          aria-hidden
+        />
+        <div
+          className={`pointer-events-none absolute -inset-3 left-1/2 top-1/2 z-0 h-[145%] w-[145%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-br from-cyan-500/25 via-orange-500/35 to-red-600/20 blur-2xl ${reducedMotion ? "opacity-50" : "opacity-80 fss-hud-rim"}`}
           aria-hidden
         />
 
         <div
           ref={cardRef}
-          className="relative origin-center overflow-hidden rounded-[1.35rem] border border-white/10 bg-black/40 shadow-[0_56px_120px_rgba(0,0,0,0.88),0_28px_70px_rgba(220,38,38,0.42)] backdrop-blur-lg will-change-transform"
+          className={
+            merged
+              ? "relative z-[1] origin-center overflow-hidden rounded-none border border-orange-500/45 border-t-orange-400/50 bg-gradient-to-br from-zinc-900/65 to-black/90 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08),0_0_32px_rgba(249,115,22,0.22)] backdrop-blur-[2px] will-change-transform lg:rounded-r-sm lg:border-l-0 lg:shadow-[0_0_40px_rgba(34,211,238,0.12),0_32px_90px_rgba(0,0,0,0.8)]"
+              : "relative z-[1] origin-center overflow-hidden rounded-sm border border-orange-500/50 bg-gradient-to-b from-zinc-900/90 to-black/95 shadow-[0_40px_100px_rgba(0,0,0,0.9),0_0_0_1px_rgba(255,255,255,0.08),0_0_28px_rgba(249,115,22,0.2)] backdrop-blur-lg will-change-transform"
+          }
           style={{ transformStyle: "preserve-3d", backfaceVisibility: "hidden" }}
         >
+          {!merged && (
+            <>
+              <div
+                className="pointer-events-none absolute inset-x-0 top-0 z-[4] h-1 bg-gradient-to-r from-cyan-500/70 via-orange-500 to-red-600 opacity-90"
+                aria-hidden
+              />
+              <div className="relative z-[5] flex min-h-9 items-center justify-between gap-2 border-b border-white/10 bg-black/50 px-2 py-1.5 sm:min-h-0 sm:px-4 sm:py-2">
+                <span className="shrink-0 font-mono text-[8px] uppercase tracking-[0.28em] text-zinc-500 sm:text-[9px] sm:tracking-[0.35em]">
+                  Asset
+                </span>
+                <span className="min-w-0 flex-1 truncate text-center font-mono text-[9px] uppercase tracking-widest text-orange-300/90 sm:text-[10px]">
+                  Portable · A/B/C
+                </span>
+                <span className="shrink-0 font-mono text-[8px] tabular-nums text-zinc-500 sm:text-[9px]">
+                  24-FSS
+                </span>
+              </div>
+            </>
+          )}
+
           <div
-            className="pointer-events-none absolute inset-0 z-[5] rounded-[inherit] bg-gradient-to-br from-white/[0.16] via-transparent to-transparent"
+            className="pointer-events-none absolute inset-0 z-[5] bg-gradient-to-br from-white/[0.08] via-transparent to-transparent"
             aria-hidden
           />
           <div
             ref={rimRef}
-            className="pointer-events-none absolute inset-px z-[6] rounded-[inherit] ring-1 ring-inset ring-white/18"
+            className="pointer-events-none absolute inset-px z-[6] rounded-[inherit] ring-1 ring-inset ring-white/12"
             aria-hidden
           />
           <div
-            className="pointer-events-none absolute -inset-10 -z-10 rounded-[inherit] bg-black/55 blur-3xl"
+            className="pointer-events-none absolute -inset-8 -z-10 rounded-[inherit] bg-black/60 blur-2xl"
             aria-hidden
           />
 
-          <div className="relative aspect-[4/5] w-full">
+          <div className="relative aspect-[4/5] w-full bg-[radial-gradient(ellipse_at_50%_42%,rgba(34,211,238,0.04)_0%,rgba(24,24,27,0.4)_38%,rgba(9,9,11,0.94)_72%)]">
+            <div
+              className="pointer-events-none absolute inset-0 z-[3] opacity-[0.14]"
+              style={{
+                backgroundImage: `repeating-linear-gradient(105deg, transparent, transparent 11px, rgba(255,255,255,0.09) 11px, rgba(255,255,255,0.09) 12px),
+                  repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.08) 2px, rgba(255,255,255,0.08) 3px)`,
+              }}
+              aria-hidden
+            />
+            <div
+              className="pointer-events-none absolute inset-0 z-[9] overflow-hidden"
+              aria-hidden
+            >
+              <div
+                className={`absolute -inset-[40%] w-[200%] bg-gradient-to-r from-transparent via-white/60 to-transparent ${reducedMotion ? "opacity-0" : "fss-hud-sweep"}`}
+              />
+            </div>
+            <div
+              className={`pointer-events-none absolute inset-0 z-[10] overflow-hidden mix-blend-soft-light ${reducedMotion ? "opacity-0" : ""}`}
+              aria-hidden
+            >
+              <div
+                className={`absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-transparent via-cyan-300/90 to-transparent shadow-[0_0_12px_rgba(34,211,238,0.6)] ${reducedMotion ? "" : "fss-hud-scan-y"}`}
+              />
+            </div>
+            <div
+              className={`pointer-events-none absolute inset-0 z-[11] opacity-[0.12] fss-noise-overlay ${reducedMotion ? "" : "fss-hud-crossfade"}`}
+              aria-hidden
+            />
             <Image
-              src={ASSETS.extinguisherFire}
+              src={ASSETS.extinguisher}
               alt="Fire extinguisher"
               fill
-              className="object-contain object-center drop-shadow-[0_36px_70px_rgba(0,0,0,0.82)]"
+              className="z-[4] object-contain object-center brightness-[1.03] contrast-[1.06] saturate-[0.92] drop-shadow-[0_28px_56px_rgba(0,0,0,0.75)]"
               sizes="(max-width:768px) 90vw, 420px"
               priority
             />
 
             <div
-              className="pointer-events-none absolute inset-0 z-[8] mix-blend-screen opacity-[0.2]"
+              className="pointer-events-none absolute inset-0 z-[5] overflow-hidden"
+              aria-hidden
+            >
+              <Image
+                src={ASSETS.extinguisherFire}
+                alt=""
+                fill
+                className={`object-contain object-center mix-blend-screen saturate-[1.2] ${reducedMotion ? "opacity-[0.12]" : "opacity-[0.38] sm:opacity-[0.44]"}`}
+                sizes="(max-width:768px) 90vw, 420px"
+              />
+            </div>
+
+            <div
+              className="pointer-events-none absolute inset-0 z-[6] bg-gradient-to-tr from-cyan-500/[0.08] via-transparent to-orange-500/[0.12] mix-blend-overlay"
+              aria-hidden
+            />
+            <div
+              className="pointer-events-none absolute inset-0 z-[6] bg-[radial-gradient(ellipse_70%_55%_at_50%_48%,transparent_0%,rgba(0,0,0,0.88)_100%)]"
+              aria-hidden
+            />
+
+            <div
+              className="pointer-events-none absolute inset-0 z-[8] mix-blend-screen opacity-[0.09]"
               aria-hidden
             >
               <Image
                 src={ASSETS.smoke}
                 alt=""
                 fill
-                className="object-cover opacity-80"
+                className="object-cover opacity-70"
                 sizes="100vw"
               />
             </div>
 
             <div
-              className={`pointer-events-none absolute inset-0 z-[9] opacity-40 mix-blend-screen ${reducedMotion ? "" : "fss-smoke-drift"}`}
+              className={`pointer-events-none absolute inset-0 z-[9] opacity-[0.14] mix-blend-screen ${reducedMotion ? "" : "fss-smoke-drift"}`}
               aria-hidden
             >
               <Image
@@ -310,11 +440,27 @@ export function FireControlCard3D({ sectionRef }: FireControlCard3DProps) {
             <CardSparkLayer reduced={reducedMotion} />
 
             <div
-              className="pointer-events-none absolute inset-x-0 top-0 z-[12] h-[38%] rounded-t-[inherit] bg-gradient-to-b from-white/30 via-white/8 to-transparent"
+              className="pointer-events-none absolute inset-x-0 top-0 z-[12] h-[32%] rounded-t-[inherit] bg-gradient-to-b from-white/14 via-white/5 to-transparent"
               aria-hidden
             />
             <div
-              className="pointer-events-none absolute inset-x-0 bottom-0 z-[12] h-[26%] rounded-b-[inherit] bg-gradient-to-t from-black/55 to-transparent"
+              className="pointer-events-none absolute inset-x-0 bottom-0 z-[12] h-[28%] rounded-b-[inherit] bg-gradient-to-t from-black/65 to-transparent"
+              aria-hidden
+            />
+            <div
+              className="pointer-events-none absolute left-2 top-2 z-[13] h-5 w-5 border-l-2 border-t-2 border-orange-400/70"
+              aria-hidden
+            />
+            <div
+              className="pointer-events-none absolute right-2 top-2 z-[13] h-5 w-5 border-r-2 border-t-2 border-orange-400/70"
+              aria-hidden
+            />
+            <div
+              className="pointer-events-none absolute bottom-2 left-2 z-[13] h-5 w-5 border-b-2 border-l-2 border-cyan-500/55"
+              aria-hidden
+            />
+            <div
+              className="pointer-events-none absolute bottom-2 right-2 z-[13] h-5 w-5 border-b-2 border-r-2 border-cyan-500/55"
               aria-hidden
             />
           </div>

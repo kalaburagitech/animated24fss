@@ -102,3 +102,87 @@ body {
     animation: none !important;
   }
 }
+
+/* Fire Control / HUD — layered effects (stronger so reads on real displays) */
+@keyframes fss-hud-sweep {
+  0% {
+    transform: translateX(-130%) skewX(-20deg);
+    opacity: 0;
+  }
+  8% {
+    opacity: 0.75;
+  }
+  100% {
+    transform: translateX(240%) skewX(-20deg);
+    opacity: 0;
+  }
+}
+
+@keyframes fss-hud-rim {
+  0%,
+  100% {
+    opacity: 0.55;
+    filter: hue-rotate(-10deg) brightness(1.08);
+  }
+  50% {
+    opacity: 0.95;
+    filter: hue-rotate(38deg) brightness(1.25);
+  }
+}
+
+@keyframes fss-crossfade-pulse {
+  0%,
+  100% {
+    opacity: 0.1;
+  }
+  50% {
+    opacity: 0.22;
+  }
+}
+
+@keyframes fss-hud-scan-y {
+  0% {
+    transform: translateY(-8%);
+    opacity: 0.35;
+  }
+  8% {
+    opacity: 0.95;
+  }
+  92% {
+    opacity: 0.85;
+  }
+  100% {
+    transform: translateY(108%);
+    opacity: 0.2;
+  }
+}
+
+.fss-hud-sweep {
+  animation: fss-hud-sweep 4.5s ease-in-out infinite;
+}
+
+.fss-hud-rim {
+  animation: fss-hud-rim 8s ease-in-out infinite;
+}
+
+.fss-hud-crossfade {
+  animation: fss-crossfade-pulse 6s ease-in-out infinite;
+}
+
+.fss-hud-scan-y {
+  animation: fss-hud-scan-y 7.5s linear infinite;
+}
+
+.fss-noise-overlay {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fss-hud-sweep,
+  .fss-hud-rim,
+  .fss-hud-crossfade,
+  .fss-hud-scan-y {
+    animation: none !important;
+  }
+}
